@@ -20,16 +20,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
-          node-version-file: package.json
-          cache: npm
-      - run: npm ci
-      - run: npm run build-checkout
-      - run: NODE_OPTIONS=--openssl-legacy-provider npm run build
-      - run: npm run format-check
-      - run: npm run lint
-      - run: npm run test
+          node-version-file: .tool-versions
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run build-checkout
+      - run: pnpm run build
+      - run: pnpm run format-check
+      - run: pnpm run lint
+      - run: pnpm run test
       - uses: actions/upload-artifact@v7
         with:
           name: dist
