@@ -40,8 +40,14 @@ jobs:
           name: action.yml
           path: action.yml
 
+  # Upstream only: the fixtures live under peter-evans and rebasing them needs
+  # write access, which no fork's token has. Without ACTIONS_BOT_TOKEN the
+  # action runs unauthenticated and dies on the API rate limit.
   test:
-    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    if: >-
+      github.repository == 'peter-evans/rebase' &&
+      (github.event_name == 'push' ||
+      github.event.pull_request.head.repo.full_name == github.repository)
     needs: [build]
     runs-on: ubuntu-latest
     strategy:
@@ -93,8 +99,12 @@ jobs:
       - if: steps.rebase3.outputs.rebased-count < 2
         run: exit 1
 
+  # Upstream only: opens the "Update distribution" pull request with upstream's
+  # bot token.
   package:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: >-
+      github.repository == 'peter-evans/rebase' &&
+      github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: [test]
     runs-on: ubuntu-latest
     steps:
