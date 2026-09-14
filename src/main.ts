@@ -49,25 +49,40 @@ async function run(): Promise<void> {
       core.debug(`sourceSettings: ${inspect(sourceSettings)}`)
       await gitSourceProvider.getSource(sourceSettings)
 
-      // Rebase
-      // Create a git command manager
-      const git = await GitCommandManager.create(sourceSettings.repositoryPath)
-      const rebaseHelper = new RebaseHelper(git, inputs.rebaseOptions)
-      let rebasedCount = 0
-      for (const pull of pulls) {
-        const result = await rebaseHelper.rebase(pull)
-        if (result) rebasedCount++
+      try {
+        // Rebase
+        // Create a git command manager
+        const git = await GitCommandManager.create(
+          sourceSettings.repositoryPath
+        )
+        const rebaseHelper = new RebaseHelper(git, inputs.rebaseOptions)
+        let rebasedCount = 0
+        for (const pull of pulls) {
+          const result = await rebaseHelper.rebase(pull)
+          if (result) rebasedCount++
+        }
+
+        // Output count of successful rebases
+        core.setOutput('rebased-count', rebasedCount)
+      } finally {
+        // Delete the repository
+        // cleanup() first: checkout v3 and later keep the token in a config
+        // file under RUNNER_TEMP, which outlives the repository directory.
+        core.debug(`Removing repo at '${sourceSettings.repositoryPath}'`)
+        try {
+          await gitSourceProvider.cleanup(sourceSettings.repositoryPath)
+        } catch (error) {
+          // Warn rather than throw: throwing here would replace whatever sent
+          // us into this finally block, and the runner discards RUNNER_TEMP at
+          // the end of the job anyway.
+          core.warning(
+            `Failed to remove the checkout credentials: ${utils.getErrorMessage(
+              error
+            )}`
+          )
+        }
+        await io.rmRF(sourceSettings.repositoryPath)
       }
-
-      // Output count of successful rebases
-      core.setOutput('rebased-count', rebasedCount)
-
-      // Delete the repository
-      // cleanup() first: checkout v3 and later keep the token in a config file
-      // under RUNNER_TEMP, which outlives the repository directory.
-      core.debug(`Removing repo at '${sourceSettings.repositoryPath}'`)
-      await gitSourceProvider.cleanup(sourceSettings.repositoryPath)
-      await io.rmRF(sourceSettings.repositoryPath)
     } else {
       core.info('No pull requests found.')
     }

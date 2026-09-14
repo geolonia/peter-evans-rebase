@@ -34019,17 +34019,30 @@ async function run() {
       const sourceSettings = await getInputs();
       debug(`sourceSettings: ${(0, import_util2.inspect)(sourceSettings)}`);
       await getSource(sourceSettings);
-      const git = await GitCommandManager.create(sourceSettings.repositoryPath);
-      const rebaseHelper = new RebaseHelper(git, inputs.rebaseOptions);
-      let rebasedCount = 0;
-      for (const pull of pulls) {
-        const result = await rebaseHelper.rebase(pull);
-        if (result) rebasedCount++;
+      try {
+        const git = await GitCommandManager.create(
+          sourceSettings.repositoryPath
+        );
+        const rebaseHelper = new RebaseHelper(git, inputs.rebaseOptions);
+        let rebasedCount = 0;
+        for (const pull of pulls) {
+          const result = await rebaseHelper.rebase(pull);
+          if (result) rebasedCount++;
+        }
+        setOutput("rebased-count", rebasedCount);
+      } finally {
+        debug(`Removing repo at '${sourceSettings.repositoryPath}'`);
+        try {
+          await cleanup(sourceSettings.repositoryPath);
+        } catch (error2) {
+          warning(
+            `Failed to remove the checkout credentials: ${getErrorMessage(
+              error2
+            )}`
+          );
+        }
+        await rmRF(sourceSettings.repositoryPath);
       }
-      setOutput("rebased-count", rebasedCount);
-      debug(`Removing repo at '${sourceSettings.repositoryPath}'`);
-      await cleanup(sourceSettings.repositoryPath);
-      await rmRF(sourceSettings.repositoryPath);
     } else {
       info("No pull requests found.");
     }
