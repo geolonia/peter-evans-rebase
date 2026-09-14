@@ -1,0 +1,16 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: peter-evans-rebase
+  title: peter-evans-rebase
+  annotations:
+    github.com/project-slug: geolonia/peter-evans-rebase
+
+
+spec:
+  type: library
+  owner: user:default/smellman
+  lifecycle: production
+  # accessGrants:
+  #   - team: group:geolonia/team-name
+  #     permission: write  # read | triage | write | maintain | admin
