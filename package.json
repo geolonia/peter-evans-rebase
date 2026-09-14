@@ -9,7 +9,7 @@
     "node": ">=24.4.0"
   },
   "scripts": {
-    "vendor": "rm -rf src/vendor/checkout && git clone --depth=1 --branch=v2.5.0 http://github.com/actions/checkout src/vendor/checkout && rm -rf src/vendor/checkout/.git",
+    "vendor": "rm -rf src/vendor/checkout && git clone --depth=1 --branch=v7.0.1 https://github.com/actions/checkout src/vendor/checkout && rm -rf src/vendor/checkout/.git src/vendor/checkout/dist src/vendor/checkout/package-lock.json && node scripts/vendor-patch.mjs",
     "clean": "rm -rf node_modules src/vendor/checkout/node_modules pnpm-lock.yaml",
     "build-checkout": "tsc -p src/vendor/checkout",
     "prebuild": "rm -rf dist",
@@ -35,9 +35,9 @@
   },
   "homepage": "https://github.com/peter-evans/rebase",
   "dependencies": {
-    "@actions/core": "^1.10.0",
-    "@actions/exec": "^1.1.0",
-    "@actions/io": "^1.1.2",
+    "@actions/core": "^3.0.1",
+    "@actions/exec": "^3.0.0",
+    "@actions/io": "^3.0.2",
     "@octokit/core": "^4.2.4",
     "@octokit/types": "^6.30.0",
     "checkout": "workspace:*",

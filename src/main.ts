@@ -63,7 +63,10 @@ async function run(): Promise<void> {
       core.setOutput('rebased-count', rebasedCount)
 
       // Delete the repository
+      // cleanup() first: checkout v3 and later keep the token in a config file
+      // under RUNNER_TEMP, which outlives the repository directory.
       core.debug(`Removing repo at '${sourceSettings.repositoryPath}'`)
+      await gitSourceProvider.cleanup(sourceSettings.repositoryPath)
       await io.rmRF(sourceSettings.repositoryPath)
     } else {
       core.info('No pull requests found.')

@@ -1,10 +1,10 @@
 import * as assert from 'assert'
 import * as core from '@actions/core'
 import * as fs from 'fs'
-import * as fsHelper from './fs-helper'
+import * as fsHelper from './fs-helper.js'
 import * as io from '@actions/io'
 import * as path from 'path'
-import {IGitCommandManager} from './git-command-manager'
+import {IGitCommandManager} from './git-command-manager.js'
 
 export async function prepareExistingDirectory(
   git: IGitCommandManager | undefined,
@@ -81,12 +81,18 @@ export async function prepareExistingDirectory(
       }
       core.endGroup()
 
+      // Check for submodules and delete any existing files if submodules are present
+      if (!(await git.submoduleStatus())) {
+        remove = true
+        core.info('Bad Submodules found, removing existing files')
+      }
+
       // Clean
       if (clean) {
         core.startGroup('Cleaning the repository')
         if (!(await git.tryClean())) {
           core.debug(
-            `The clean command failed. This might be caused by: 1) path too long, 2) permission issue, or 3) file in use. For futher investigation, manually run 'git clean -ffdx' on the directory '${repositoryPath}'.`
+            `The clean command failed. This might be caused by: 1) path too long, 2) permission issue, or 3) file in use. For further investigation, manually run 'git clean -ffdx' on the directory '${repositoryPath}'.`
           )
           remove = true
         } else if (!(await git.tryReset())) {
