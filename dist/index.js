@@ -21345,7 +21345,7 @@ var isPlainObject = __nccwpck_require__(3287);
 var nodeFetch = _interopDefault(__nccwpck_require__(467));
 var requestError = __nccwpck_require__(537);
 
-const VERSION = "5.6.1";
+const VERSION = "5.6.3";
 
 function getBufferResponse(response) {
   return response.arrayBuffer();
@@ -33494,15 +33494,17 @@ function escapeArgument(arg, doubleEscapeMetaChars) {
     arg = `${arg}`;
 
     // Algorithm below is based on https://qntm.org/cmd
+    // It's slightly altered to disable JS backtracking to avoid hanging on specially crafted input
+    // Please see https://github.com/moxystudio/node-cross-spawn/pull/160 for more information
 
     // Sequence of backslashes followed by a double quote:
     // double up all the backslashes and escape the double quote
-    arg = arg.replace(/(\\*)"/g, '$1$1\\"');
+    arg = arg.replace(/(?=(\\+?)?)\1"/g, '$1$1\\"');
 
     // Sequence of backslashes followed by the end of the string
     // (which will become a double quote later):
     // double up all the backslashes
-    arg = arg.replace(/(\\*)$/, '$1$1');
+    arg = arg.replace(/(?=(\\+?)?)\1$/, '$1$1');
 
     // All other backslashes occur literally
 
@@ -33579,10 +33581,12 @@ const pathKey = __nccwpck_require__(7299)();
 function resolveCommandAttempt(parsed, withoutPathExt) {
     const cwd = process.cwd();
     const hasCustomCwd = parsed.options.cwd != null;
+    // Worker threads do not have process.chdir()
+    const shouldSwitchCwd = hasCustomCwd && process.chdir !== undefined;
 
     // If a custom `cwd` was specified, we need to change the process cwd
     // because `which` will do stat calls but does not support a custom cwd
-    if (hasCustomCwd) {
+    if (shouldSwitchCwd) {
         try {
             process.chdir(parsed.options.cwd);
         } catch (err) {
@@ -33600,7 +33604,9 @@ function resolveCommandAttempt(parsed, withoutPathExt) {
     } catch (e) {
         /* Empty */
     } finally {
-        process.chdir(cwd);
+        if (shouldSwitchCwd) {
+            process.chdir(cwd);
+        }
     }
 
     // If we successfully resolved, ensure that an absolute path is returned

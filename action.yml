@@ -30,7 +30,7 @@ inputs:
       For example, to always prefer "their" code, use "-Xtheirs" ("--strategy-option=theirs").
       Pass multiple options as a single string separated by commas or newlines.
 runs:
-  using: 'node20'
+  using: 'node24'
   main: 'dist/index.js'
 branding:
   icon: 'git-pull-request'
