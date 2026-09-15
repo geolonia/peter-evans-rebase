@@ -1,0 +1,15 @@
+# The vendored copy of actions/checkout is a workspace package: pnpm then
+# installs its dependencies next to it, so `tsc -p src/vendor/checkout` can
+# compile it in place and the bundler resolves `checkout/lib/*` through the
+# node_modules symlink.
+packages:
+  - src/vendor/checkout
+
+allowBuilds:
+  # Both place a platform-specific native binary in their own package
+  # directory, so their install scripts have to run.
+  esbuild: true
+  unrs-resolver: true
+  # Only powers jest --watch, which nothing here runs; jest falls back to
+  # polling without it.
+  "@parcel/watcher": false

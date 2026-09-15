@@ -19,44 +19,51 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
         with:
-          node-version: 20.x
-          cache: npm
-      - run: npm ci
-      - run: npm run build-checkout
-      - run: NODE_OPTIONS=--openssl-legacy-provider npm run build
-      - run: npm run format-check
-      - run: npm run lint
-      - run: npm run test
-      - uses: actions/upload-artifact@v4
+          node-version-file: .tool-versions
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run build-checkout
+      - run: pnpm run build
+      - run: pnpm run format-check
+      - run: pnpm run lint
+      - run: pnpm run test
+      - uses: actions/upload-artifact@v7
         with:
           name: dist
           path: dist
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: action.yml
           path: action.yml
 
+  # Upstream only: the fixtures live under peter-evans and rebasing them needs
+  # write access, which no fork's token has. Without ACTIONS_BOT_TOKEN the
+  # action runs unauthenticated and dies on the API rate limit.
   test:
-    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    if: >-
+      github.repository == 'peter-evans/rebase' &&
+      (github.event_name == 'push' ||
+      github.event.pull_request.head.repo.full_name == github.repository)
     needs: [build]
     runs-on: ubuntu-latest
     strategy:
       matrix:
         target: [built, committed]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: main
       - if: matrix.target == 'built' || github.event_name == 'pull_request'
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: dist
           path: dist
       - if: matrix.target == 'built' || github.event_name == 'pull_request'
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: action.yml
           path: .
@@ -92,18 +99,22 @@ jobs:
       - if: steps.rebase3.outputs.rebased-count < 2
         run: exit 1
 
+  # Upstream only: opens the "Update distribution" pull request with upstream's
+  # bot token.
   package:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: >-
+      github.repository == 'peter-evans/rebase' &&
+      github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: [test]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
         with:
           name: dist
           path: dist
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ secrets.ACTIONS_BOT_TOKEN }}
           commit-message: Update distribution
